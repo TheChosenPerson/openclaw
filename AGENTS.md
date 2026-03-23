@@ -29,7 +29,7 @@
 - For docs, UI copy, and picker lists, order services/providers alphabetically unless the section is explicitly describing runtime behavior (for example auto-detection or execution order).
 - Section cross-references: use anchors on root-relative paths (example: `[Hooks](/configuration#hooks)`).
 - Doc headings and anchors: avoid em dashes and apostrophes in headings because they break Mintlify anchor links.
-- When Peter asks for links, reply with full `https://docs.openclaw.ai/...` URLs (not root-relative).
+- When the user asks for links, reply with full `https://docs.openclaw.ai/...` URLs (not root-relative).
 - When you touch docs, end the reply with the `https://docs.openclaw.ai/...` URLs you referenced.
 - README (GitHub): keep absolute docs URLs (`https://docs.openclaw.ai/...`) so links work on GitHub.
 - Docs content must be generic: no personal device names/hostnames/paths; use placeholders like `user@gateway-host` and “gateway host”.
@@ -120,7 +120,7 @@
 - Do not set test workers above 16; tried already.
 - Do not reintroduce Vitest VM pools by default without fresh green evidence on current `main`; keep CI on `forks`.
 - If local Vitest runs cause memory pressure (common on non-Mac-Studio hosts), use `OPENCLAW_TEST_PROFILE=low OPENCLAW_TEST_SERIAL_GATEWAY=1 pnpm test` for land/gate runs.
-- Live tests (real keys): `CLAWDBOT_LIVE_TEST=1 pnpm test:live` (OpenClaw-only) or `LIVE=1 pnpm test:live` (includes provider live tests). Docker: `pnpm test:docker:live-models`, `pnpm test:docker:live-gateway`. Onboarding Docker E2E: `pnpm test:docker:onboard`.
+- Live tests (real keys): `OPENCLAW_LIVE_TEST=1 pnpm test:live` (OpenClaw-only) or `LIVE=1 pnpm test:live` (includes provider live tests). Docker: `pnpm test:docker:live-models`, `pnpm test:docker:live-gateway`. Onboarding Docker E2E: `pnpm test:docker:onboard`.
 - Full kit + what’s covered: `docs/help/testing.md`.
 - Changelog: user-facing changes only; no internal/meta notes (version alignment, appcast reminders, release process).
 - Changelog placement: in the active version block, append new entries to the end of the target section (`### Changes` or `### Fixes`); do not insert new entries at the top of a section.
