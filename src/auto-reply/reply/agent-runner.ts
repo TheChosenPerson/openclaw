@@ -9,7 +9,6 @@ import {
   resolveSessionFilePathOptions,
   resolveSessionTranscriptPath,
 } from "../../config/sessions/paths.js";
-import { updateSessionStore, updateSessionStoreEntry } from "../../config/sessions/store.js";
 import type { SessionEntry } from "../../config/sessions/types.js";
 import type { TypingMode } from "../../config/types.js";
 import { emitAgentEvent } from "../../infra/agent-events.js";
@@ -46,8 +45,8 @@ import { createFollowupRunner } from "./followup-runner.js";
 import { resolveOriginMessageProvider, resolveOriginMessageTo } from "./origin-routing.js";
 import { readPostCompactionContext } from "./post-compaction-context.js";
 import { resolveActiveRunQueueAction } from "./queue-policy.js";
-import { enqueueFollowupRun, type FollowupRun, type QueueSettings } from "./queue.js";
-import { createReplyMediaPathNormalizer } from "./reply-media-paths.js";
+import { enqueueFollowupRun } from "./queue/enqueue.js";
+import type { FollowupRun, QueueSettings } from "./queue/types.js";
 import { createReplyToModeFilterForChannel, resolveReplyToMode } from "./reply-threading.js";
 import { incrementRunCompactionCount, persistRunSessionUsage } from "./session-run-accounting.js";
 import { createTypingSignaler } from "./typing-mode.js";
@@ -67,6 +66,11 @@ let usageCostRuntimePromise: Promise<typeof import("./usage-cost.runtime.js")> |
 let contextTokensRuntimePromise: Promise<
   typeof import("../../agents/context-tokens.runtime.js")
 > | null = null;
+let replyMediaPathsRuntimePromise: Promise<
+  typeof import("./reply-media-paths.runtime.js")
+> | null = null;
+let sessionStoreRuntimePromise: Promise<typeof import("../../config/sessions/store.runtime.js")> | null =
+  null;
 
 function loadPiEmbeddedQueueRuntime() {
   piEmbeddedQueueRuntimePromise ??= import("../../agents/pi-embedded-queue.runtime.js");
@@ -91,6 +95,16 @@ function loadUsageCostRuntime() {
 function loadContextTokensRuntime() {
   contextTokensRuntimePromise ??= import("../../agents/context-tokens.runtime.js");
   return contextTokensRuntimePromise;
+}
+
+function loadReplyMediaPathsRuntime() {
+  replyMediaPathsRuntimePromise ??= import("./reply-media-paths.runtime.js");
+  return replyMediaPathsRuntimePromise;
+}
+
+function loadSessionStoreRuntime() {
+  sessionStoreRuntimePromise ??= import("../../config/sessions/store.runtime.js");
+  return sessionStoreRuntimePromise;
 }
 
 export async function runReplyAgent(params: {
@@ -188,6 +202,7 @@ export async function runReplyAgent(params: {
   );
   const applyReplyToMode = createReplyToModeFilterForChannel(replyToMode, replyToChannel);
   const cfg = followupRun.run.config;
+  const { createReplyMediaPathNormalizer } = await loadReplyMediaPathsRuntime();
   const normalizeReplyMediaPaths = createReplyMediaPathNormalizer({
     cfg,
     sessionKey,
@@ -219,6 +234,7 @@ export async function runReplyAgent(params: {
     activeSessionEntry.updatedAt = updatedAt;
     activeSessionStore[sessionKey] = activeSessionEntry;
     if (storePath) {
+      const { updateSessionStoreEntry } = await loadSessionStoreRuntime();
       await updateSessionStoreEntry({
         storePath,
         sessionKey,
@@ -338,6 +354,7 @@ export async function runReplyAgent(params: {
     nextEntry.sessionFile = nextSessionFile;
     activeSessionStore[sessionKey] = nextEntry;
     try {
+      const { updateSessionStore } = await loadSessionStoreRuntime();
       await updateSessionStore(storePath, (store) => {
         store[sessionKey] = nextEntry;
       });
@@ -438,6 +455,7 @@ export async function runReplyAgent(params: {
       activeSessionEntry.updatedAt = updatedAt;
       activeSessionStore[sessionKey] = activeSessionEntry;
       if (storePath) {
+        const { updateSessionStoreEntry } = await loadSessionStoreRuntime();
         await updateSessionStoreEntry({
           storePath,
           sessionKey,
@@ -494,6 +512,7 @@ export async function runReplyAgent(params: {
         activeSessionStore[sessionKey] = fallbackStateEntry;
       }
       if (sessionKey && storePath) {
+        const { updateSessionStoreEntry } = await loadSessionStoreRuntime();
         await updateSessionStoreEntry({
           storePath,
           sessionKey,
